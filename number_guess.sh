@@ -7,8 +7,10 @@ DATABASE_TRUNCATE() {
   RESULT=$($PSQL "ALTER SEQUENCE guesses_guess_id_seq RESTART WITH 1;")
 }
 
-NUMBER_TOSS() {
+GAME_START() {
   NUMBER=$(( $RANDOM % 1000 ))
+  NUMBER_OF_GUESSES=0
+  NUMBER_GUESS "Guess the secret number between 1 and 1000:"
 }
 
 USER_LOGIN() {
@@ -37,7 +39,7 @@ NUMBER_GUESS() {
   # GUESSING THE SECRET NUMBER
   #============================
   # prompt the users guess and save it
-  echo "Guess the secret number between 1 and 1000:"
+  echo $1  
   read GUESS
 
   # check if guess is a number
@@ -48,23 +50,21 @@ NUMBER_GUESS() {
     NUMBER_GUESS
   else
     # guess is a number
-    INSERT_RESULT=$($PSQL "INSERT INTO guesses(guess) VALUES($GUESS);")
+    #INSERT_RESULT=$($PSQL "INSERT INTO guesses(guess) VALUES($GUESS);")
+    NUMBER_OF_GUESSES=$(( $NUMBER_OF_GUESSES + 1 ))
 
     if [[ $GUESS -lt $NUMBER ]]
     then    
-      echo "It's higher than that, guess again:"
-      NUMBER_GUESS
+      NUMBER_GUESS "It's higher than that, guess again:"
     elif [[ $GUESS -gt $NUMBER ]]
     then
-      echo "It's lower than that, guess again:"
-      NUMBER_GUESS
-    else
-      GUESS_NUMBER=$($PSQL "SELECT MAX(guess_id) FROM guesses;")
-      echo "You guessed it in $GUESS_NUMBER tries. The secret number was $NUMBER. Nice job!"            
+      NUMBER_GUESS "It's lower than that, guess again:"
+    else      
+      echo "You guessed it in $NUMBER_OF_GUESSES tries. The secret number was $NUMBER. Nice job!"            
       INSERT_RESULT=$($PSQL "UPDATE usernames SET games_played=$(( $GAMES_PLAYED + 1 )) WHERE username='$USERNAME';")      
-      if [[ $BEST_GAME -gt $GUESS_NUMBER ]]
+      if [[ $BEST_GAME -gt $NUMBER_OF_GUESSES ]]
       then
-        INSERT_RESULT=$($PSQL "UPDATE usernames SET best_game=$GUESS_NUMBER WHERE username='$USERNAME';")
+        INSERT_RESULT=$($PSQL "UPDATE usernames SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME';")
       fi
     fi
   fi
@@ -72,8 +72,6 @@ NUMBER_GUESS() {
 
 DATABASE_TRUNCATE
 
-NUMBER_TOSS
-
 USER_LOGIN
 
-NUMBER_GUESS
+GAME_START
