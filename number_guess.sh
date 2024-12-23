@@ -2,11 +2,6 @@
 
 PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 
-DATABASE_TRUNCATE() {
-  RESULT=$($PSQL "TRUNCATE TABLE guesses;")
-  RESULT=$($PSQL "ALTER SEQUENCE guesses_guess_id_seq RESTART WITH 1;")
-}
-
 GAME_START() {
   NUMBER=$(( $RANDOM % 1000 ))
   NUMBER_OF_GUESSES=0
@@ -62,15 +57,16 @@ NUMBER_GUESS() {
     else      
       echo "You guessed it in $NUMBER_OF_GUESSES tries. The secret number was $NUMBER. Nice job!"            
       INSERT_RESULT=$($PSQL "UPDATE usernames SET games_played=$(( $GAMES_PLAYED + 1 )) WHERE username='$USERNAME';")      
+      BEST_GAME=$($PSQL "SELECT best_game FROM usernames WHERE username='$USERNAME';")
       if [[ $BEST_GAME -gt $NUMBER_OF_GUESSES ]]
       then
+        echo $BEST_GAME
+        echo $NUMBER_OF_GUESSES
         INSERT_RESULT=$($PSQL "UPDATE usernames SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME';")
       fi
     fi
   fi
 }
-
-DATABASE_TRUNCATE
 
 USER_LOGIN
 
