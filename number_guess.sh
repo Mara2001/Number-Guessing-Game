@@ -2,6 +2,10 @@
 
 PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 
+DATABASE_TRUNCATE() {
+  $($PSQL "TRUNCATE TABLE guesses;")
+}
+
 USER_LOGIN() {
   # LOGIN THE USER
   #================
@@ -29,18 +33,32 @@ NUMBER_GUESS() {
   echo "Guess the secret number between 1 and 1000:"
   read GUESS
 
-  if [[ $GUESS -lt $NUMBER ]]
+  # check if guess is a number
+  if [[ ! $GUESS =~ [0-9]+ ]]
   then
-    echo "It's higher than that, guess again:"
-    NUMBER_GUESS
-  elif [[ $GUESS -gt $NUMBER ]]
-  then
-    echo "It's lower than that, guess again:"
+    # guess is not a number
+    echo "That is not an integer, guess again:"
     NUMBER_GUESS
   else
-    echo "You guessed it in <number_of_guesses> tries. The secret number was <secret_number>. Nice job!"    
+    # guess is a number
+    INSERT_RESULT=$($PSQL "INSERT INTO guesses(guess) VALUES($GUESS);")
+
+    if [[ $GUESS -lt $NUMBER ]]
+    then    
+      echo "It's higher than that, guess again:"
+      NUMBER_GUESS
+    elif [[ $GUESS -gt $NUMBER ]]
+    then
+      echo "It's lower than that, guess again:"
+      NUMBER_GUESS
+    else
+      GUESS_NUMBER=$($PSQL "SELECT MAX(guess_id) FROM guesses;")
+      echo "You guessed it in $GUESS_NUMBER tries. The secret number was $NUMBER. Nice job!"    
+    fi
   fi
 }
+
+DATABASE_TRUNCATE
 
 NUMBER=$(( $RANDOM % 1000 ))
 echo $NUMBER
