@@ -59,9 +59,7 @@ NUMBER_GUESS() {
       INSERT_RESULT=$($PSQL "UPDATE usernames SET games_played=$(( $GAMES_PLAYED + 1 )) WHERE username='$USERNAME';")      
       BEST_GAME=$($PSQL "SELECT best_game FROM usernames WHERE username='$USERNAME';")
       if [[ $BEST_GAME -gt $NUMBER_OF_GUESSES ]]
-      then
-        echo $BEST_GAME
-        echo $NUMBER_OF_GUESSES
+      then        
         INSERT_RESULT=$($PSQL "UPDATE usernames SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME';")
       fi
     fi
