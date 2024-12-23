@@ -30,11 +30,11 @@ NUMBER_GUESS() {
   read GUESS
 
   if [[ $GUESS -lt $NUMBER ]]
-  than
+  then
     echo "It's higher than that, guess again:"
     NUMBER_GUESS
   elif [[ $GUESS -gt $NUMBER ]]
-  than
+  then
     echo "It's lower than that, guess again:"
     NUMBER_GUESS
   else
