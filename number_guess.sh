@@ -3,7 +3,12 @@
 PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 
 DATABASE_TRUNCATE() {
-  $($PSQL "TRUNCATE TABLE guesses;")
+  RESULT=$($PSQL "TRUNCATE TABLE guesses;")
+  RESULT=$($PSQL "ALTER SEQUENCE guesses_guess_id_seq RESTART WITH 1;")
+}
+
+NUMBER_TOSS() {
+  NUMBER=$(( $RANDOM % 1000 ))
 }
 
 USER_LOGIN() {
@@ -22,7 +27,9 @@ USER_LOGIN() {
     echo "Welcome, $USERNAME! It looks like this is your first time here."
   else
     # username found
-    echo "Welcome back, $USERNAME! You have played <games_played> games, and your best game took <best_game> guesses."
+    GAMES_PLAYED=$($PSQL "SELECT games_played FROM usernames WHERE username='$USERNAME';")
+    BEST_GAME=$($PSQL "SELECT best_game FROM usernames WHERE username='$USERNAME';")
+    echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
   fi
 }
 
@@ -53,15 +60,20 @@ NUMBER_GUESS() {
       NUMBER_GUESS
     else
       GUESS_NUMBER=$($PSQL "SELECT MAX(guess_id) FROM guesses;")
-      echo "You guessed it in $GUESS_NUMBER tries. The secret number was $NUMBER. Nice job!"    
+      echo "You guessed it in $GUESS_NUMBER tries. The secret number was $NUMBER. Nice job!"            
+      INSERT_RESULT=$($PSQL "UPDATE usernames SET games_played=$(( $GAMES_PLAYED + 1 )) WHERE username='$USERNAME';")      
+      if [[ $BEST_GAME -gt $GUESS_NUMBER ]]
+      then
+        INSERT_RESULT=$($PSQL "UPDATE usernames SET best_game=$GUESS_NUMBER WHERE username='$USERNAME';")
+      fi
     fi
   fi
 }
 
 DATABASE_TRUNCATE
 
-NUMBER=$(( $RANDOM % 1000 ))
-echo $NUMBER
+NUMBER_TOSS
 
 USER_LOGIN
+
 NUMBER_GUESS
